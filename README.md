@@ -2,6 +2,16 @@
 
 A state-of-the-art, local-first collaborative document editor featuring real-time peer synchronization, conflict resolution via Yjs CRDTs, session authentication, and database-backed document snapshots.
 
+## 🚀 Live Demo
+
+| Service | URL |
+|---|---|
+| **Frontend (Vercel)** | [https://local-first-collaborative-document.vercel.app](https://local-first-collaborative-document.vercel.app) |
+| **WebSocket Server (Render)** | [https://doc-editor-websocket.onrender.com](https://doc-editor-websocket.onrender.com) |
+| **Health Check** | [https://doc-editor-websocket.onrender.com/health](https://doc-editor-websocket.onrender.com/health) |
+
+---
+
 ## Features
 
 *   **Real-time Collaboration**: Instant synchronization across multiple editors using Yjs CRDTs over WebSockets.
