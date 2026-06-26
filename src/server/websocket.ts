@@ -4,6 +4,7 @@ console.log('[WebSocket] DATABASE_URL configuration:', process.env.DATABASE_URL 
 console.log('[WebSocket] NODE_ENV:', process.env.NODE_ENV);
 
 import { WebSocketServer, WebSocket } from 'ws';
+import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { verifyToken } from '../lib/jwt';
 import { userRepository } from './repositories/user.repository';
 import { getDocumentRole } from './permissions/document.permissions';
@@ -12,7 +13,40 @@ import { Role } from '@prisma/client';
 
 // Render injects PORT; fall back to WS_PORT for custom setups, then 3001 for local dev
 const PORT = parseInt(process.env.PORT || process.env.WS_PORT || '3001', 10);
-const wss = new WebSocketServer({ port: PORT });
+
+// HTTP server for Render health checks (required so Render knows the service is up)
+const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+  } else {
+    res.writeHead(404);
+    res.end('Not found');
+  }
+});
+
+// Attach WebSocket server to the same HTTP server (shares the same port)
+const wss = new WebSocketServer({ server: httpServer });
+
+httpServer.listen(PORT, () => {
+  console.log(`[WebSocket] HTTP health check + WebSocket server running on port ${PORT}`);
+});
+
+// Self-ping every 14 minutes to prevent Render free tier from sleeping (sleeps after 15 min)
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+if (RENDER_URL) {
+  setInterval(() => {
+    const url = `${RENDER_URL}/health`;
+    import('https').then(({ get }) => {
+      get(url, (res) => {
+        console.log(`[WebSocket] Self-ping ${url} → ${res.statusCode}`);
+      }).on('error', (err) => {
+        console.warn('[WebSocket] Self-ping failed:', err.message);
+      });
+    });
+  }, 14 * 60 * 1000);
+  console.log(`[WebSocket] Self-ping enabled for ${RENDER_URL}`);
+}
 
 interface ClientConnection {
   socket: WebSocket;
