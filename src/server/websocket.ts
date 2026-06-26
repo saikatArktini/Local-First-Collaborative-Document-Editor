@@ -10,6 +10,7 @@ import { getDocumentRole } from './permissions/document.permissions';
 import { syncService } from './services/sync.service';
 import { Role } from '@prisma/client';
 
+// Render injects PORT; fall back to WS_PORT for custom setups, then 3001 for local dev
 const PORT = parseInt(process.env.PORT || process.env.WS_PORT || '3001', 10);
 const wss = new WebSocketServer({ port: PORT });
 

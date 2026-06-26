@@ -236,8 +236,12 @@ export default function EditorClient({
         const token = await apiGetWsToken()
         if (destroyed) return
 
-        const port = process.env.NEXT_PUBLIC_WS_PORT || "3001"
-        ws = new WebSocket(`ws://localhost:${port}?token=${token}&documentId=${documentId}`)
+        // Use the full WS URL from env (e.g. wss://doc-editor-websocket.onrender.com in prod)
+        // Fall back to localhost for local development
+        const wsBase =
+          process.env.NEXT_PUBLIC_WS_URL ||
+          `ws://localhost:${process.env.NEXT_PUBLIC_WS_PORT || "3001"}`
+        ws = new WebSocket(`${wsBase}?token=${token}&documentId=${documentId}`)
         wsRef.current = ws
 
         ws.onopen = () => {
