@@ -32,30 +32,25 @@ A state-of-the-art, local-first collaborative document editor featuring real-tim
 ## Local Setup & Development
 
 ### 1. Prerequisites
-Ensure you have Docker and Node.js installed.
+Ensure you have **Node.js** installed. No Docker needed — the database is hosted on [Neon](https://neon.tech).
 
 ### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-### 3. Spin Up Local Database
-```bash
-docker-compose up -d
-```
-
-### 4. Setup Database Schema and Seed Data
+### 3. Setup Database Schema
 ```bash
 npx prisma db push
 npx prisma db seed
 ```
 
-### 5. Start the Standalone WebSocket Server
+### 4. Start the Standalone WebSocket Server
 ```bash
 npm run websocket
 ```
 
-### 6. Run Next.js Development App
+### 5. Run Next.js Development App
 ```bash
 npm run dev
 ```
@@ -78,20 +73,21 @@ npm test
 ### 1. PostgreSQL Database
 Use a cloud-native database provider like **Neon**. Provide the connection string as `DATABASE_URL` in your environment variables.
 
-### 2. Standalone WebSocket Server (Fly.io)
-Deploy the standalone WebSocket process to a persistent VM/container hosting platform:
+### 2. Standalone WebSocket Server (Render)
+Deploy the standalone WebSocket process to [Render](https://render.com) as a **Web Service**:
 *   **Build Command**: `npm ci && npx prisma generate`
 *   **Start Command**: `npx tsx src/server/websocket.ts`
-*   **Environment Variables**: `DATABASE_URL`, `JWT_SECRET`, `WS_PORT`
+*   **Health Check Path**: `/health`
+*   **Environment Variables**: `DATABASE_URL`, `JWT_SECRET`, `RENDER_EXTERNAL_URL`
 
 ### 3. Frontend App (Vercel)
-Deploy your Next.js project directly to Vercel:
+Deploy your Next.js project directly to [Vercel](https://vercel.com):
 *   **Build Command**: `npx prisma generate && next build`
 *   **Environment Variables**:
-    *   `DATABASE_URL`: (Your database connection string)
-    *   `JWT_SECRET`: (Same secret key used in WebSocket server)
+    *   `DATABASE_URL`: (Your Neon database connection string)
+    *   `JWT_SECRET`: (Must match the value set on Render)
     *   `AUTH_SECRET`: (NextAuth security key)
-    *   `NEXT_PUBLIC_WS_URL`: `wss://your-websocket-server.railway.app` (The domain of your WebSocket server from Step 2)
+    *   `NEXT_PUBLIC_WS_URL`: `wss://doc-editor-websocket.onrender.com`
 
 ---
 
