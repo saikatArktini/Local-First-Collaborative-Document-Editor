@@ -1,6 +1,7 @@
 import process from 'process';
 
-// Force WS_PORT for test isolation
+// Force PORT/WS_PORT for test isolation
+process.env.PORT = '3002';
 process.env.WS_PORT = '3002';
 
 // Import mocks before importing the websocket server

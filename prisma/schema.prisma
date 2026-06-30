@@ -1,40 +1,23 @@
-datasource db {
-  provider = "postgresql"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {
-  OWNER
-  EDITOR
-  VIEWER
-}
-
-enum AuditAction {
-  DOCUMENT_CREATED
-  DOCUMENT_DELETED
-  ROLE_CHANGED
-  SNAPSHOT_CREATED
-  RESTORE_PERFORMED
-  SYNC_FAILED
+datasource db {
+  provider = "postgresql"
 }
 
 model User {
-  id           String            @id @default(uuid())
-  email        String            @unique
-  name         String
-  passwordHash String
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-
-  // Relationships
-  ownedDocuments Document[]      @relation("DocumentOwner")
+  id             String            @id @default(uuid())
+  email          String            @unique
+  name           String
+  passwordHash   String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  accounts       Account[]
+  auditLogs      AuditLog[]
+  ownedDocuments Document[]        @relation("DocumentOwner")
   memberships    DocumentMember[]
   versions       DocumentVersion[]
-  auditLogs      AuditLog[]
-  accounts       Account[]
   sessions       Session[]
 }
 
@@ -42,15 +25,13 @@ model Document {
   id        String            @id @default(uuid())
   title     String
   ownerId   String
-  owner     User              @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
-
-  // Relationships
+  auditLogs AuditLog[]
+  owner     User              @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members   DocumentMember[]
   versions  DocumentVersion[]
   syncOps   SyncOperation[]
-  auditLogs AuditLog[]
 }
 
 model DocumentMember {
@@ -60,10 +41,8 @@ model DocumentMember {
   role       Role     @default(EDITOR)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  // Relationships
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, documentId])
 }
@@ -74,10 +53,8 @@ model DocumentVersion {
   snapshot   Bytes
   createdBy  String
   createdAt  DateTime @default(now())
-
-  // Relationships
-  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  creator  User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  creator    User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 }
 
 model SyncOperation {
@@ -86,9 +63,7 @@ model SyncOperation {
   operation  Bytes
   clientId   String
   version    Int
-
-  // Relationships
-  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, version])
 }
@@ -100,10 +75,8 @@ model AuditLog {
   documentId String?
   metadata   Json?
   createdAt  DateTime    @default(now())
-
-  // Relationships
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  document Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  document   Document?   @relation(fields: [documentId], references: [id])
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
@@ -112,15 +85,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -139,4 +111,19 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+enum Role {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum AuditAction {
+  DOCUMENT_CREATED
+  DOCUMENT_DELETED
+  ROLE_CHANGED
+  SNAPSHOT_CREATED
+  RESTORE_PERFORMED
+  SYNC_FAILED
 }

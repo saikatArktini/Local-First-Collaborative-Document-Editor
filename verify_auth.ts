@@ -23,7 +23,7 @@ interface MockAuthRequest extends NextRequest {
 // We export the tests to run or verify manually
 export async function runAuthTests() {
   console.log("=== Running Authentication Protection Tests ===")
-  const middleware = (await import("./middleware")).default
+  const middleware = (await import("./src/proxy")).proxy
 
   // Test 1: Unauthenticated user accessing API
   {
