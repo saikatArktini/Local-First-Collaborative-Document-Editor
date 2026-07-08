@@ -65,6 +65,9 @@ export default function EditorClient({
   // Ref referencing the HTML textarea element
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  // Ref referencing the outer scrolling canvas element
+  const canvasRef = useRef<HTMLDivElement>(null)
+
   // Unique client session ID to filter out self-broadcasted echo updates
   const clientId = useRef(`client-${Math.random().toString(36).slice(2)}`)
 
@@ -409,7 +412,57 @@ export default function EditorClient({
         await handleSaveSnapshot()
       }
     }, 20000)
+
+    // Ensure typing auto-scrolls the parent viewport if the cursor hits the bottom
+    setTimeout(scrollCursorIntoView, 0)
   }
+
+  /**
+   * Tracks cursor position and auto-scrolls the outer canvas container to keep the typing line in view.
+   */
+  const scrollCursorIntoView = useCallback(() => {
+    const textarea = textareaRef.current
+    const canvas = canvasRef.current
+    if (!textarea || !canvas) return
+
+    const selectionEnd = textarea.selectionEnd
+    const text = textarea.value
+
+    // Determine how many line breaks precede the cursor position
+    const linesBeforeCursor = text.substring(0, selectionEnd).split("\n").length
+
+    const style = window.getComputedStyle(textarea)
+    const lineHeight = parseFloat(style.lineHeight) || 28 // fallback to 28px standard spacing
+
+    // Calculate vertical position of cursor in textarea
+    const textareaPaddingTop = parseFloat(style.paddingTop) || 0
+    const cursorYInTextarea = (linesBeforeCursor * lineHeight) + textareaPaddingTop
+
+    // Calculate vertical position relative to the scrolling canvas container
+    const paperCard = textarea.parentElement
+    if (!paperCard) return
+    const cardOffsetTop = paperCard.offsetTop || 0
+    const cursorYInCanvas = cardOffsetTop + cursorYInTextarea
+
+    const viewportHeight = canvas.clientHeight
+    const currentScrollTop = canvas.scrollTop
+
+    // Safety margins in pixels to trigger scrolling
+    const bottomSafetyMargin = 120
+    const topSafetyMargin = 80
+
+    // Scroll down if typing moves below the screen visibility threshold
+    const bottomThreshold = currentScrollTop + viewportHeight - bottomSafetyMargin
+    if (cursorYInCanvas > bottomThreshold) {
+      canvas.scrollTop = cursorYInCanvas - viewportHeight + bottomSafetyMargin
+    }
+
+    // Scroll up if navigating with arrow keys above the visibility threshold
+    const topThreshold = currentScrollTop + topSafetyMargin
+    if (cursorYInCanvas < topThreshold) {
+      canvas.scrollTop = Math.max(0, cursorYInCanvas - topSafetyMargin)
+    }
+  }, [])
 
   /**
    * Debounces document title changes and saves them to the database.
@@ -521,13 +574,18 @@ export default function EditorClient({
       {/* ── Main Layout ── */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Editor canvas */}
-        <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col items-center py-12 px-8 bg-bg-base">
+        <div
+          ref={canvasRef}
+          className="flex-1 overflow-y-auto no-scrollbar flex flex-col items-center py-12 px-8 bg-bg-base"
+        >
           <div className="w-full max-w-[780px] min-h-[calc(100vh-200px)] h-fit bg-bg-surface border border-border-subtle rounded-xl py-12 px-14 shadow-md flex flex-col">
             <textarea
               ref={textareaRef}
               className="w-full min-h-[500px] bg-transparent border-none outline-none resize-none overflow-hidden font-sans text-base leading-[1.8] text-text-primary caret-accent-primary"
               value={content}
               onChange={handleTextChange}
+              onKeyUp={scrollCursorIntoView}
+              onSelect={scrollCursorIntoView}
               readOnly={isReadOnly}
               placeholder={isReadOnly ? "You have read-only access to this document." : "Start writing your document here…"}
               spellCheck
