@@ -1,7 +1,6 @@
 import process from 'process';
 
-// Force PORT/WS_PORT for test isolation
-process.env.PORT = '3002';
+// Force WS_PORT for test isolation
 process.env.WS_PORT = '3002';
 
 // Import mocks before importing the websocket server
@@ -166,15 +165,15 @@ export async function runWebSocketTests() {
     {
       const ownerSession = await connectClient('owner-1', 'doc-1');
       await sleep(100);
-      
+
       const editorSession = await connectClient('editor-1', 'doc-1');
       await sleep(150);
 
       const ownerReceivedJoin = ownerSession.events.some(e => e.event === 'join' && e.data?.user?.id === 'editor-1');
       const editorReceivedPresence = editorSession.events.some(
-        e => e.event === 'presence' && 
-        e.data?.users?.some((u: any) => u.user.id === 'owner-1') && 
-        e.data?.users?.some((u: any) => u.user.id === 'editor-1')
+        e => e.event === 'presence' &&
+          e.data?.users?.some((u: any) => u.user.id === 'owner-1') &&
+          e.data?.users?.some((u: any) => u.user.id === 'editor-1')
       );
 
       const passed = ownerReceivedJoin && editorReceivedPresence;
@@ -267,7 +266,7 @@ export async function runWebSocketTests() {
     syncService.submitChange = originalSubmitChange;
 
     console.log(`=== WebSocket Tests Status: ${testsPassed ? 'SUCCESS' : 'FAILURE'} ===`);
-    
+
     // Terminate test runner process cleanly
     process.exit(testsPassed ? 0 : 1);
   }
