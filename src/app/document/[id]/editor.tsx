@@ -522,7 +522,7 @@ export default function EditorClient({
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Editor canvas */}
         <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col items-center py-12 px-8 bg-bg-base">
-          <div className="w-full max-w-[780px] min-h-[calc(100vh-200px)] h-fit bg-bg-surface border border-border-subtle rounded-xl py-12 px-14 shadow-md flex flex-col">
+          <div className="w-full max-w-[780px] min-h-[calc(100vh-200px)] bg-bg-surface border border-border-subtle rounded-xl py-12 px-14 shadow-md">
             <textarea
               ref={textareaRef}
               className="w-full min-h-[500px] bg-transparent border-none outline-none resize-none overflow-hidden font-sans text-base leading-[1.8] text-text-primary caret-accent-primary"
