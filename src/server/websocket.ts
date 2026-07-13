@@ -11,8 +11,13 @@ import { getDocumentRole } from './permissions/document.permissions';
 import { syncService } from './services/sync.service';
 import { Role } from '@prisma/client';
 
-// Render injects PORT; fall back to WS_PORT for custom setups, then 3001 for local dev
-const PORT = parseInt(process.env.PORT || process.env.WS_PORT || '3001', 10);
+// Render injects PORT; in local development we bypass PORT if it matches 3000 (Next.js port) to avoid collision
+const PORT = parseInt(
+  (process.env.NODE_ENV === 'development' && process.env.PORT === '3000')
+    ? (process.env.WS_PORT || '3001')
+    : (process.env.PORT || process.env.WS_PORT || '3001'),
+  10
+);
 
 // HTTP server for Render health checks (required so Render knows the service is up)
 const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -78,7 +83,6 @@ wss.on('connection', async (socket, req) => {
     const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
     const token = url.searchParams.get('token');
     const documentId = url.searchParams.get('documentId');
-
     // 1. Verify required query parameters exist
     if (!token || !documentId) {
       socket.send(JSON.stringify({ event: 'error', data: { message: 'Missing token or documentId parameter' } }));
